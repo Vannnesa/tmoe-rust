@@ -39,7 +39,6 @@ impl GitManager {
             .context("Failed to execute git pull")?;
 
         if !output.status.success() {
-            // Try to skip rebase
             let _skip = std::process::Command::new("git")
                 .current_dir(&self.repo_path)
                 .arg("rebase")
@@ -70,5 +69,40 @@ impl GitManager {
             .context("Failed to execute git fetch")?;
 
         Ok(())
+    }
+
+    pub fn status(&self) -> Result<String> {
+        let output = std::process::Command::new("git")
+            .current_dir(&self.repo_path)
+            .arg("status")
+            .arg("--porcelain")
+            .output()
+            .context("Failed to get git status")?;
+
+        Ok(String::from_utf8_lossy(&output.stdout).to_string())
+    }
+
+    pub fn get_current_branch(&self) -> Result<String> {
+        let output = std::process::Command::new("git")
+            .current_dir(&self.repo_path)
+            .arg("rev-parse")
+            .arg("--abbrev-ref")
+            .arg("HEAD")
+            .output()
+            .context("Failed to get current branch")?;
+
+        Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
+    }
+
+    pub fn get_remote_url(&self) -> Result<String> {
+        let output = std::process::Command::new("git")
+            .current_dir(&self.repo_path)
+            .arg("config")
+            .arg("--get")
+            .arg("remote.origin.url")
+            .output()
+            .context("Failed to get remote URL")?;
+
+        Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
     }
 }

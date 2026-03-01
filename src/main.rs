@@ -12,6 +12,7 @@ use crossterm::{
 };
 use ratatui::backend::{Backend, CrosstermBackend};
 use ratatui::Terminal;
+use std::path::PathBuf;
 
 #[derive(Parser)]
 #[command(name = "tmoe")]
@@ -221,8 +222,24 @@ fn run_tui<B: Backend>(terminal: &mut Terminal<B>, sys_info: &SystemInfo) -> Res
                                 message_timeout = 30;
                             }
                             "update" => {
-                                last_action_msg = "Update: not implemented".to_string();
-                                message_timeout = 30;
+                                if sys_info.is_root {
+                                    let home = std::env::var("HOME").unwrap_or_else(|_| "/root".to_string());
+                                    let tmoe_git = PathBuf::from(home).join("tmoe-git");
+                                    
+                                    if tmoe_git.exists() {
+                                        let manager = tmoe_linux_tools::commands::GitManager::new(tmoe_git);
+                                        match manager.pull_with_rebase() {
+                                            Ok(_) => last_action_msg = "Git update: Success".to_string(),
+                                            Err(e) => last_action_msg = format!("Git update failed: {}", e),
+                                        }
+                                    } else {
+                                        last_action_msg = "TMOE repo not found".to_string();
+                                    }
+                                    message_timeout = 40;
+                                } else {
+                                    last_action_msg = "Update requires root".to_string();
+                                    message_timeout = 30;
+                                }
                             }
                             _ => {}
                         }
