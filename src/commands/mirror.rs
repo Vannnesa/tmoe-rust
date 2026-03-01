@@ -1,6 +1,5 @@
-use anyhow::{Result, Context};
+use anyhow::Result;
 use std::env;
-use std::path::PathBuf;
 
 pub struct MirrorManager {
     mirrors: Vec<Mirror>,
@@ -73,7 +72,7 @@ impl MirrorManager {
     }
 
     fn update_apt_sources(&self, mirror_url: &str) -> Result<()> {
-        let sources_content = format!(
+        let _sources_content = format!(
             "deb http://{}/debian/ bookworm main contrib non-free non-free-firmware
 deb http://{}/debian/ bookworm-updates main contrib non-free non-free-firmware
 deb http://{}/debian-security bookworm-security main contrib non-free non-free-firmware",
