@@ -169,24 +169,68 @@ fn run_interactive_mode(sys_info: &SystemInfo) -> Result<()> {
 fn run_tui<B: Backend>(terminal: &mut Terminal<B>, sys_info: &SystemInfo) -> Result<()> {
     let mut app = App::new();
     let event_handler = EventHandler::new();
+    let mut last_action_msg = String::new();
+    let mut message_timeout = 0;
 
     loop {
-        terminal.draw(|f| tmoe_linux_tools::tui::draw(f, &app))?;
+        // Clear and redraw
+        terminal.draw(|f| {
+            // Update message display
+            if message_timeout > 0 {
+                app.set_message(last_action_msg.clone());
+                message_timeout -= 1;
+            } else {
+                app.clear_message();
+            }
+            tmoe_linux_tools::tui::draw(f, &app);
+        })?;
 
         if let Some(event) = event_handler.recv() {
             match event {
-                UserEvent::MoveUp => app.move_up(),
+                UserEvent::MoveUp => {
+                    app.move_up();
+                    message_timeout = 0;
+                }
                 UserEvent::MoveDown => {
                     app.move_down(7); // 7 menu items
+                    message_timeout = 0;
                 }
                 UserEvent::Select => {
                     let menu = tmoe_linux_tools::tui::Menu::main_menu(app.language);
                     if let Some(item) = menu.get_selected(app.selected_index) {
-                        handle_menu_selection(&item.action, sys_info)?;
+                        match item.action.as_str() {
+                            "exit" => break,
+                            "install-gui" => {
+                                last_action_msg = "GUI: Selected".to_string();
+                                message_timeout = 30;
+                            }
+                            "mirror" => {
+                                last_action_msg = "Mirror: Selected".to_string();
+                                message_timeout = 30;
+                            }
+                            "docker" => {
+                                last_action_msg = "Docker: not implemented".to_string();
+                                message_timeout = 30;
+                            }
+                            "aria2" => {
+                                last_action_msg = "Aria2: not implemented".to_string();
+                                message_timeout = 30;
+                            }
+                            "qemu" => {
+                                last_action_msg = "QEMU: not implemented".to_string();
+                                message_timeout = 30;
+                            }
+                            "update" => {
+                                last_action_msg = "Update: not implemented".to_string();
+                                message_timeout = 30;
+                            }
+                            _ => {}
+                        }
                     }
-                    app.set_message("Action completed".to_string());
                 }
-                UserEvent::Back => break,
+                UserEvent::Back => {
+                    message_timeout = 0;
+                }
                 UserEvent::Quit => {
                     break;
                 }
@@ -197,26 +241,6 @@ fn run_tui<B: Backend>(terminal: &mut Terminal<B>, sys_info: &SystemInfo) -> Res
         std::thread::sleep(std::time::Duration::from_millis(50));
     }
 
-    Ok(())
-}
-
-fn handle_menu_selection(action: &str, sys_info: &SystemInfo) -> Result<()> {
-    match action {
-        "install-gui" => ColoredOutput::info("GUI installation not yet implemented"),
-        "docker" => ColoredOutput::info("Docker management not yet implemented"),
-        "aria2" => ColoredOutput::info("Aria2 management not yet implemented"),
-        "qemu" => ColoredOutput::info("QEMU management not yet implemented"),
-        "mirror" => ColoredOutput::info("Mirror switching not yet implemented"),
-        "update" => {
-            if sys_info.is_root {
-                ColoredOutput::info("Update not yet implemented");
-            } else {
-                ColoredOutput::warning("Update requires root privileges");
-            }
-        }
-        "exit" => {},
-        _ => {}
-    }
     Ok(())
 }
 

@@ -2,7 +2,7 @@ use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, List, ListItem, Paragraph},
+    widgets::{Block, Borders, Clear, List, ListItem, Paragraph},
     Frame,
 };
 
@@ -10,6 +10,9 @@ use super::app::App;
 use super::menu::Menu;
 
 pub fn draw(f: &mut Frame, app: &App) {
+    // Clear the entire screen first
+    f.render_widget(Clear, f.area());
+    
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(1)
